@@ -216,6 +216,9 @@
     let activeVisitImages = [];
     let activeVisitIndex = 0;
     let lastFocusedElement = null;
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStarted = false;
 
     function activateVisitsTab(category) {
       console.log("Visits tab toggled to:", category);
@@ -328,6 +331,34 @@
         closeLightbox();
       }
     });
+
+    lightbox?.addEventListener("touchstart", (event) => {
+      if (!lightbox.classList.contains("is-open") || !event.changedTouches.length) {
+        return;
+      }
+
+      const touch = event.changedTouches[0];
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+      touchStarted = true;
+    }, { passive: true });
+
+    lightbox?.addEventListener("touchend", (event) => {
+      if (!touchStarted || !event.changedTouches.length) {
+        return;
+      }
+
+      const touch = event.changedTouches[0];
+      const deltaX = touch.clientX - touchStartX;
+      const deltaY = touch.clientY - touchStartY;
+      const isHorizontalSwipe = Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2;
+
+      touchStarted = false;
+
+      if (isHorizontalSwipe) {
+        showAdjacentVisit(deltaX < 0 ? 1 : -1);
+      }
+    }, { passive: true });
 
     window.addEventListener("keydown", (event) => {
       if (!lightbox?.classList.contains("is-open")) {
