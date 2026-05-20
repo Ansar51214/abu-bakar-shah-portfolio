@@ -205,8 +205,8 @@
   const visitsSection = document.querySelector(".visits-section");
 
   if (visitsSection) {
-    const visitsTabs = Array.from(visitsSection.querySelectorAll("[data-visits-tab]"));
-    const visitsPanels = Array.from(visitsSection.querySelectorAll("[data-visits-panel]"));
+    const visitsTabs = Array.from(visitsSection.querySelectorAll(".tab-btn"));
+    const visitsPanels = Array.from(visitsSection.querySelectorAll(".tab-content"));
     const lightbox = document.querySelector("[data-visits-lightbox]");
     const lightboxImage = document.querySelector("[data-visits-lightbox-image]");
     const lightboxCaption = document.querySelector("[data-visits-lightbox-caption]");
@@ -221,23 +221,36 @@
     let touchStarted = false;
 
     function activateVisitsTab(category) {
-      console.log("Visits tab toggled to:", category);
+      const activeContent = document.getElementById(category);
+
+      if (!activeContent) {
+        return;
+      }
+
       visitsTabs.forEach((tab) => {
-        const isActive = tab.dataset.visitsTab === category;
+        const isActive = tab.dataset.tab === category;
+        tab.classList.toggle("active", isActive);
         tab.classList.toggle("is-active", isActive);
         tab.setAttribute("aria-selected", String(isActive));
       });
 
       visitsPanels.forEach((panel) => {
-        const isActive = panel.dataset.visitsPanel === category;
+        panel.style.display = "none";
+        panel.style.opacity = "0";
         panel.classList.remove("is-active");
-        panel.hidden = !isActive;
-        panel.classList.toggle("is-hidden", !isActive);
-
-        if (isActive) {
-          requestAnimationFrame(() => panel.classList.add("is-active"));
-        }
+        panel.classList.add("is-hidden");
+        panel.hidden = true;
       });
+
+      activeContent.hidden = false;
+      activeContent.classList.remove("is-hidden");
+      activeContent.style.display = "grid";
+
+      setTimeout(() => {
+        activeContent.style.transition = "opacity 0.3s ease";
+        activeContent.style.opacity = "1";
+        activeContent.classList.add("is-active");
+      }, 10);
     }
 
     function getVisitItems(panel) {
@@ -315,7 +328,7 @@
     }
 
     visitsTabs.forEach((tab) => {
-      tab.addEventListener("click", () => activateVisitsTab(tab.dataset.visitsTab));
+      tab.addEventListener("click", () => activateVisitsTab(tab.dataset.tab));
     });
 
     visitsSection.querySelectorAll("[data-visit-image]").forEach((button) => {
@@ -470,10 +483,14 @@
 
   // Trigger a subtle fade-in for hero and about images/layout on initial page load
   function triggerPageLoadReveal() {
+    function onPageLoad() {
+      document.body.classList.add("page-loaded");
+    }
+
     if (document.readyState === "complete") {
-      requestAnimationFrame(() => document.body.classList.add("page-loaded"));
+      requestAnimationFrame(onPageLoad);
     } else {
-      window.addEventListener("load", () => requestAnimationFrame(() => document.body.classList.add("page-loaded")));
+      window.addEventListener("load", () => requestAnimationFrame(onPageLoad));
     }
   }
 
