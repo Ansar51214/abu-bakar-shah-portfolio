@@ -239,7 +239,7 @@
 
     function getVisitItems(panel) {
       if (!panel) return [];
-      return Array.from(panel.querySelectorAll(".visit-card:not(.image-failed) [data-visit-image]")).map((button) => {
+      return Array.from(panel.querySelectorAll(".visit-card:not([hidden]) [data-visit-image]")).map((button) => {
         const image = button.querySelector("img");
         const card = button.closest(".visit-card");
         const caption = card ? card.querySelector(".visit-caption") : null;
@@ -275,7 +275,7 @@
       if (!activePanel) {
         return;
       }
-      const galleryButtons = Array.from(activePanel.querySelectorAll(".visit-card:not(.image-failed) [data-visit-image]"));
+      const galleryButtons = Array.from(activePanel.querySelectorAll(".visit-card:not([hidden]) [data-visit-image]"));
       activeVisitImages = getVisitItems(activePanel);
       activeVisitIndex = galleryButtons.indexOf(button);
       lastFocusedElement = document.activeElement;
@@ -343,48 +343,22 @@
       }
     });
 
-    // Auto-detect format, cache-bust, check quality, and load visits images dynamically
+    // Hide a visit card only if its final image is genuinely unavailable.
     const visitImages = visitsSection.querySelectorAll(".visit-image-button img");
-    const formats = [".jpg", ".png", ".jpeg", ".webp"];
 
     visitImages.forEach((img) => {
-      const baseSrc = img.getAttribute("data-base-src");
-      if (!baseSrc) return;
-
-      let formatIndex = 0;
-
-      function tryNextFormat() {
-        if (formatIndex < formats.length) {
-          const ext = formats[formatIndex];
-          formatIndex += 1;
-
-          const tempImg = new Image();
-          tempImg.onload = () => {
-            // Success! Set the real image src, fade it in, and check resolution
-            img.src = tempImg.src;
-            img.classList.add("is-loaded");
-            if (tempImg.naturalWidth && tempImg.naturalWidth < 400) {
-              img.closest(".visit-card")?.classList.add("low-res-warning");
-            }
-          };
-
-          tempImg.onerror = () => {
-            // Failure, try next format in the list
-            tryNextFormat();
-          };
-
-          // Cache busting query parameter (?v=1) is appended on http/https protocols.
-          // Omitted on file:// protocol to prevent disk lookup failure.
-          const isHttp = window.location.protocol.startsWith("http");
-          const cacheBuster = isHttp ? "?v=1" : "";
-          tempImg.src = `${baseSrc}${ext}${cacheBuster}`;
-        } else {
-          // All formats failed, trigger placeholder fallback classes
-          img.closest(".visit-card")?.classList.add("image-failed");
-        }
+      if (img.complete && img.naturalWidth) {
+        img.classList.add("is-loaded");
+      } else {
+        img.addEventListener("load", () => img.classList.add("is-loaded"), { once: true });
       }
 
-      tryNextFormat();
+      img.addEventListener("error", () => {
+        const card = img.closest(".visit-card");
+        if (card) {
+          card.hidden = true;
+        }
+      }, { once: true });
     });
   }
 
