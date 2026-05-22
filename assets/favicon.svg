@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title>Muhammad Abu Bakar Siddique Shah portfolio mark</title>
+  <defs>
+    <linearGradient id="gold" x1="12" y1="8" x2="52" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f0d080"/>
+      <stop offset="1" stop-color="#c9a84c"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#0b0f0d"/>
+  <path d="M32 8 52 18v14c0 11.8-7.3 19.7-20 24C19.3 51.7 12 43.8 12 32V18L32 8Z" fill="#0f3d2e" stroke="url(#gold)" stroke-width="3"/>
+  <path d="M22 25h20M22 32h20M27 39h10" stroke="url(#gold)" stroke-linecap="round" stroke-width="4"/>
+</svg>

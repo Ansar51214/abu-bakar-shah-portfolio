@@ -44,121 +44,6 @@
     });
   }
 
-  function initHeroParticles() {
-    const canvas = document.getElementById("hero-canvas");
-    if (!canvas || window.innerWidth < 768 || !window.THREE) {
-      return;
-    }
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 5;
-
-    const renderer = new THREE.WebGLRenderer({
-      canvas,
-      alpha: true,
-      antialias: true
-    });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.7));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-
-    const geometry = new THREE.BufferGeometry();
-    const particleCount = 800;
-    const positions = new Float32Array(particleCount * 3);
-    const colors = new Float32Array(particleCount * 3);
-    const gold = new THREE.Color("#c9a84c");
-    const green = new THREE.Color("#52b788");
-
-    for (let i = 0; i < particleCount; i += 1) {
-      const index = i * 3;
-      positions[index] = Math.random() * 20 - 10;
-      positions[index + 1] = Math.random() * 20 - 10;
-      positions[index + 2] = Math.random() * 20 - 10;
-
-      const mixed = gold.clone().lerp(green, Math.random() > 0.72 ? 0.65 : 0.08);
-      colors[index] = mixed.r;
-      colors[index + 1] = mixed.g;
-      colors[index + 2] = mixed.b;
-    }
-
-    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-
-    const material = new THREE.PointsMaterial({
-      size: 0.05,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.94
-    });
-
-    const particles = new THREE.Points(geometry, material);
-    scene.add(particles);
-
-    let mouseX = 0;
-    let mouseY = 0;
-    let frameId = 0;
-
-    window.addEventListener("mousemove", (event) => {
-      mouseX = (event.clientX - window.innerWidth / 2) / 200;
-      mouseY = (event.clientY - window.innerHeight / 2) / 200;
-    }, { passive: true });
-
-    function resizeRenderer() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-
-    window.addEventListener("resize", resizeRenderer);
-
-    function animate() {
-      frameId = window.requestAnimationFrame(animate);
-      particles.rotation.y += 0.0005;
-      particles.rotation.x += 0.0002;
-      camera.position.x += (mouseX - camera.position.x) * 0.035;
-      camera.position.y += (-mouseY - camera.position.y) * 0.035;
-      camera.position.z = 5;
-      renderer.render(scene, camera);
-    }
-
-    animate();
-
-    window.addEventListener("beforeunload", () => {
-      window.cancelAnimationFrame(frameId);
-      renderer.dispose();
-      geometry.dispose();
-      material.dispose();
-    });
-  }
-
-  try {
-    initHeroParticles();
-  } catch (error) {
-    console.warn("Three.js particles initialization failed:", error);
-  }
-
-  const tiltCards = document.querySelectorAll("[data-tilt]");
-
-  tiltCards.forEach((card) => {
-    card.addEventListener("mousemove", (event) => {
-      if (window.matchMedia("(pointer: coarse)").matches) {
-        return;
-      }
-
-      const rect = card.getBoundingClientRect();
-      const x = (event.clientX - rect.left - rect.width / 2) / (rect.width / 2);
-      const y = (event.clientY - rect.top - rect.height / 2) / (rect.height / 2);
-
-      card.style.transition = "transform 80ms ease, box-shadow 160ms ease";
-      card.style.transform = `perspective(1000px) rotateX(${-y * 10}deg) rotateY(${x * 10}deg)`;
-    });
-
-    card.addEventListener("mouseleave", () => {
-      card.style.transition = "transform 450ms ease, box-shadow 220ms ease";
-      card.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg)";
-    });
-  });
-
   const revealItems = document.querySelectorAll("[data-reveal]");
 
   if ("IntersectionObserver" in window) {
@@ -281,7 +166,6 @@
     }
 
     function openLightbox(button) {
-      console.log("Image click registered. Opening lightbox...");
       if (!lightbox) {
         console.warn("Lightbox element not found!");
         return;
@@ -406,19 +290,26 @@
     });
   }
 
-  const counterGroup = document.querySelector("[data-counter-group]");
+  const counterGroups = document.querySelectorAll("[data-counter-group]");
+  const counterFormatter = new Intl.NumberFormat("en");
 
   function animateCounter(counter) {
     const target = Number(counter.dataset.target || "0");
     const suffix = counter.dataset.suffix || "";
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const duration = 2000;
     const startTime = performance.now();
+
+    if (reducedMotion) {
+      counter.textContent = `${counterFormatter.format(target)}${suffix}`;
+      return;
+    }
 
     function update(now) {
       const progress = Math.min((now - startTime) / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
       const value = Math.round(target * eased);
-      counter.textContent = `${value}${suffix}`;
+      counter.textContent = `${counterFormatter.format(value)}${suffix}`;
 
       if (progress < 1) {
         window.requestAnimationFrame(update);
@@ -428,7 +319,7 @@
     window.requestAnimationFrame(update);
   }
 
-  if (counterGroup) {
+  if (counterGroups.length && "IntersectionObserver" in window) {
     const counterObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
@@ -438,7 +329,9 @@
       });
     }, { threshold: 0.45 });
 
-    counterObserver.observe(counterGroup);
+    counterGroups.forEach((group) => counterObserver.observe(group));
+  } else {
+    counterGroups.forEach((group) => group.querySelectorAll("[data-target]").forEach(animateCounter));
   }
 
   const sections = Array.from(document.querySelectorAll("main section[id]"));
